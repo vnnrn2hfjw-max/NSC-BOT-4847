@@ -1,64 +1,50 @@
 const fs = require("fs");
 const path = require("path");
 
-
-// ==============================
-// TRIGGER DATA
-// ==============================
-
 const DATA_FILE = path.join(
-  __dirname,
-  "..",
-  "Data",
-  "triggers.json"
+    __dirname,
+    "..",
+    "Data",
+    "triggers.json"
 );
 
-
-// ==============================
-// SEND LONG MESSAGE
-// ==============================
-
-async function sendLongMessage(channel, text) {
-
-  const MAX_LENGTH = 2000;
-
-  if (text.length <= MAX_LENGTH) {
-    return channel.send(text);
-  }
-
-  let remaining = text;
-
-  while (remaining.length > MAX_LENGTH) {
-
-    let splitAt =
-      remaining.lastIndexOf("\n", MAX_LENGTH);
-
-    if (splitAt <= 0) {
-      splitAt = MAX_LENGTH;
+function loadTriggers() {
+    if (!fs.existsSync(DATA_FILE)) {
+        return {};
     }
 
-    const part =
-      remaining.slice(0, splitAt);
-
-    await channel.send(part);
-
-    remaining =
-      remaining.slice(splitAt).trimStart();
-  }
-
-  if (remaining.length > 0) {
-    await channel.send(remaining);
-  }
+    try {
+        return JSON.parse(
+            fs.readFileSync(DATA_FILE, "utf8")
+        );
+    } catch {
+        return {};
+    }
 }
 
+function saveTriggers(data) {
+    fs.writeFileSync(
+        DATA_FILE,
+        JSON.stringify(data, null, 2)
+    );
+}
 
-// ==============================
-// TRIGGER RESPONSES
-// ==============================
+module.exports = {
+    name: "messageCreate",
 
-const triggers = {
+    async execute(message) {
+        if (message.author.bot) return;
 
-  ",access": `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
+        const triggers = loadTriggers();
+        const content = message.content.trim();
+
+        // ==========================================
+        // ACCESS — ENGLISH
+        // ==========================================
+
+        if (content.toLowerCase() === ",access") {
+
+            const text = `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
 ### <:Black_Sparkle_Crown:1443171402814591037> __OFFICIAL MEMBERSHIP REQUIREMENTS__
 
 > <a:crown_black:1528862538765176922> **WELCOME TO NSC**
@@ -136,9 +122,23 @@ Every member is expected to remain:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-# <a:Red_Crown:1535721885403324486> __NSC | NO SECOND CHANCES__ <a:Red_Crown:1535721885403324486>`,
+# <a:Red_Crown:1535721885403324486> __NSC | NO SECOND CHANCES__ <a:Red_Crown:1535721885403324486>`;
 
-  ",saccess": `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
+            return message.channel.send({
+                content: text,
+                allowedMentions: {
+                    parse: []
+                }
+            });
+        }
+
+        // ==========================================
+        // SACCESS — SPANISH
+        // ==========================================
+
+        if (content.toLowerCase() === ",saccess") {
+
+            const text = `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
 ### <:Black_Sparkle_Crown:1443171402814591037> __REQUISITOS OFICIALES DE MEMBRESÍA__
 
 > <a:crown_black:1528862538765176922> **BIENVENIDO A NSC**
@@ -208,98 +208,123 @@ Unirte a NSC significa llevar el **nombre de NSC** y representar a la pandilla.
 
 Se espera que cada miembro sea:
 
-**LEAL • ACTIVO • RESPETUOSO • DISCIPLINADO • COMPROMETIDO**`,
+**LEAL • ACTIVO • RESPETUOSO • DISCIPLINADO • COMPROMETIDO**
 
-  ",Roblox": `https://www.roblox.com/share/g/926022365`,
+<a:gs_red_flames:1527623825590587424> **Gana tu lugar.**
+<a:gs_red_flames:1527623825590587424> **Demuestra tu lealtad.**
+<a:gs_red_flames:1527623825590587424> **Representa a NSC.**
 
-  ",prices": `# NSC PRICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## ACCESS ##
-> - Free Access — FREE
-> - Half Access — 350 Robux | $3.50
-> - Full Access — 600 Robux | $8
-> - Name Skip — 150 Robux | $1.50
+# <a:Red_Crown:1535721885403324486> __NSC | NO SECOND CHANCES__ <a:Red_Crown:1535721885403324486>`;
 
-## STAFF RANKS ##
+            return message.channel.send({
+                content: text,
+                allowedMentions: {
+                    parse: []
+                }
+            });
+        }
+
+        // ==========================================
+        // ROBLOX
+        // ==========================================
+
+        if (content.toLowerCase() === ",roblox") {
+
+            return message.channel.send(
+                "https://www.roblox.com/share/g/926022365"
+            );
+        }
+
+        // ==========================================
+        // PRICES
+        // ==========================================
+
+        if (content.toLowerCase() === ",prices") {
+
+            const text = `# <a:Red_Crown:1483487368282374246> NSC PRICES <a:Red_Crown:1483487368282374246>
+
+## ACCESS
+
+> - **Free Access** — FREE
+> - **Half Access** — 350 Robux | $3.50
+> - **Full Access** — 600 Robux | $8
+> - **Name Skip** — 150 Robux | $1.50
+
+## STAFF RANKS
+
 -# Limited spots
 - **Trial required before permissions are given.**
-> - Chief of Staff — $250
-> - Manager — $200
-> - Head Admin — $160
-> - Senior Admin — $125
-> - Admin — $90
-> - Ranker — $60
-> - Head Moderator — $50
-> - Senior Moderator — $40
-> - Moderator — $30
-> - Junior Moderator — $20
-> - Trial Moderator — $10
 
-## EXTRA ##
-> - Link Perms — $3
-> - Pic Perms — $3
-> - Custom Role — $10
-> - Private VC — $15
-> - Custom Role + Private VC Bundle — $20 (Best Value)
+> - **Chief of Staff** — $250
+> - **Manager** — $200
+> - **Head Admin** — $160
+> - **Senior Admin** — $125
+> - **Admin** — $90
+> - **Ranker** — $60
+> - **Head Moderator** — $50
+> - **Senior Moderator** — $40
+> - **Moderator** — $30
+> - **Junior Moderator** — $20
+> - **Trial Moderator** — $10
 
-## PAYMENTS ##
+## EXTRA
+
+> - **Link Perms** — $3
+> - **Pic Perms** — $3
+> - **Custom Role** — $10
+> - **Private VC** — $15
+> - **Custom Role + Private VC Bundle** — $20 (Best Value)
+
+## PAYMENTS
+
 > - PayPal (Friends & Family ONLY)
 > - Robux
 > - Server Boosts
 > - Gift Cards (Robux, PS5 & App Store)
 
-## TERMS AND CONDITIONS ##
+## TERMS AND CONDITIONS
+
 > **Only buy from a Trusted Seller, Owner, or Founder.**
 > **Do NOT send payment until your purchase has been confirmed.**
 > No refunds.
 > Trial is still required for staff ranks.
 > Abuse of purchased roles may result in removal without a refund.
 > Leadership roles are **not for sale**.
-> All purchases are final.`
-};
+> All purchases are final.`;
 
+            return message.channel.send({
+                content: text,
+                allowedMentions: {
+                    parse: []
+                }
+            });
+        }
 
-// ==============================
-// MESSAGE CREATE
-// ==============================
+        // ==========================================
+        // SAVED TRIGGERS
+        // ==========================================
 
-module.exports = {
+        const trigger =
+            Object.keys(triggers).find(
+                key =>
+                    key.toLowerCase() ===
+                    content.toLowerCase()
+            );
 
-  name: "messageCreate",
+        if (!trigger) return;
 
-  async execute(message) {
+        const response =
+            triggers[trigger];
 
-    // Ignore bots
-    if (message.author.bot) return;
+        if (!response) return;
 
-    // Exact trigger only
-    const trigger =
-      message.content.trim().toLowerCase();
-
-    // Find response
-    const response =
-      Object.keys(triggers).find(
-        key => key.toLowerCase() === trigger
-      );
-
-    if (!response) return;
-
-    try {
-
-      await sendLongMessage(
-        message.channel,
-        triggers[response]
-      );
-
-    } catch (error) {
-
-      console.error(
-        "❌ Trigger error:",
-        error
-      );
-
+        return message.channel.send({
+            content: response,
+            allowedMentions: {
+                parse: []
+            }
+        });
     }
-
-  }
-
 };
