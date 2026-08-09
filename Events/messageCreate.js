@@ -1,261 +1,224 @@
 const fs = require("fs");
 const path = require("path");
-
 const DATA_FOLDER = path.join(__dirname, "..", "Data");
 const TRIGGER_FILE = path.join(DATA_FOLDER, "triggers.json");
-
+// ==========================================
+// LOAD JSON TRIGGERS
+// ==========================================
 function loadTriggers() {
     if (!fs.existsSync(DATA_FOLDER)) {
-        fs.mkdirSync(DATA_FOLDER, { recursive: true });
+        fs.mkdirSync(DATA_FOLDER, {
+            recursive: true
+        });
     }
-
     if (!fs.existsSync(TRIGGER_FILE)) {
-        fs.writeFileSync(TRIGGER_FILE, "{}");
+        fs.writeFileSync(
+            TRIGGER_FILE,
+            "{}"
+        );
     }
-
     try {
         return JSON.parse(
-            fs.readFileSync(TRIGGER_FILE, "utf8")
+            fs.readFileSync(
+                TRIGGER_FILE,
+                "utf8"
+            )
         );
-    } catch {
+    } catch (error) {
+        console.error(
+            "❌ Could not read triggers.json:",
+            error
+        );
         return {};
     }
 }
-
+// ==========================================
+// SEND LONG MESSAGE
+// Discord limit = 2000 characters
+// ==========================================
+async function sendLongMessage(channel, text) {
+    while (text.length > 2000) {
+        let splitAt = text.lastIndexOf(
+            "\n",
+            2000
+        );
+        if (splitAt <= 0) {
+            splitAt = 2000;
+        }
+        const chunk =
+            text.slice(
+                0,
+                splitAt
+            );
+        text =
+            text
+                .slice(splitAt)
+                .trimStart();
+        await channel.send({
+            content: chunk,
+            allowedMentions: {
+                parse: []
+            }
+        });
+    }
+    if (text.length > 0) {
+        await channel.send({
+            content: text,
+            allowedMentions: {
+                parse: []
+            }
+        });
+    }
+}
+// ==========================================
+// EVENT
+// ==========================================
 module.exports = {
     name: "messageCreate",
-
     async execute(message) {
-
+        // Ignore bots
         if (message.author.bot) return;
-
-        const content = message.content.trim();
-
+        const content =
+            message.content.trim();
         if (!content) return;
-
-
-        // ==========================================
-        // !access
-        // ==========================================
-
-        if (content.toLowerCase() === "!access") {
-
+        const command =
+            content.toLowerCase();
+// ==========================================
+// !ACCESS
+// ==========================================
+        if (command === "!access") {
             const text = `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
 ### <:Black_Sparkle_Crown:1443171402814591037> __OFFICIAL MEMBERSHIP REQUIREMENTS__
-
 > <a:crown_black:1528862538765176922> **WELCOME TO NSC**
 >
 > **NSC | No Second Chances** is a respected and rapidly growing gang built upon **loyalty, discipline, activity, respect, and commitment.**
 >
 > Membership is earned. Before requesting entry, you must complete **ALL requirements** below.
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ## <a:black:1491054403829108877> __REQUIREMENTS__ <a:black:1491054403829108877>
-
 **<a:Animatedgun:1475190665645129860> 01 | OFFICIAL ROBLOX GROUP**
-
 Join the official NSC Roblox Group:
 > https://www.roblox.com/share/g/926022365
-
 **<a:red_m4a1:1492343878064275576> 02 | FOLLOW OWNERS**
-
 Follow both official NSC owners:
 > [Darius](https://www.roblox.com/users/5782622558/profile)
 > [Blastyed](https://www.roblox.com/users/3025544313/profile)
-
 **<:11act:1535721705836642424> 03 | NSC IDENTIFICATION**
-
 Add **NSC** or **666** to both your Roblox and Discord names.
-
 **<a:BLACK_CROSS:1535722063996657676> 04 | ACCOUNT AGE**
-
 Your Roblox account must be **at least 1 month old**.
-
 **<a:Black_Planet:1535722235770310658> 05 | RULES**
-
 Read and understand **all NSC rules**:
 > <#1502687087584084038>
-
 Failure to follow NSC rules may result in disciplinary action.
-
 **<:shiny_red_shield:1526960458458988724> 06 | ACTIVITY**
-
 React to the **4 most recent Activity Checks**:
 > <#1524048971667079178>
-
 **<a:black_diamond:1442514695633371178> 07 | BADGES**
-
 Your Roblox account must contain **at least one full page of badges**.
-
 Your Roblox inventory must be set to **PUBLIC** so Staff can verify your account.
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ## <a:RED_INS_Verify:1092149695217946664> __APPLICATION PROCESS__ <a:RED_INS_Verify:1092149695217946664>
-
 Once **ALL requirements** have been completed:
-
 > <a:red:1359058496527794216> **Open an NSC Join Ticket.**
 > <a:red:1359058496527794216> **Provide clear proof of every requirement.**
 > <a:red:1359058496527794216> **Wait for an authorized Staff member to review your application.**
-
 <a:redverifycross:1449461247836950750> **Applications containing missing, misleading, or unverifiable information may be denied or returned.**
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ## <:Black_Sparkle_Crown:1443171402814591037> __NSC STANDARD__ <:Black_Sparkle_Crown:1443171402814591037>
-
 Joining NSC means carrying the **NSC name** and representing the gang.
-
 Every member is expected to remain:
-
 **LOYAL • ACTIVE • RESPECTFUL • DISCIPLINED • COMMITTED**
-
 <a:gs_red_flames:1527623825590587424> **Earn your place.**
 <a:gs_red_flames:1527623825590587424> **Prove your loyalty.**
 <a:gs_red_flames:1527623825590587424> **Represent NSC.**
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 # <a:Red_Crown:1535721885403324486> __NSC | NO SECOND CHANCES__ <a:Red_Crown:1535721885403324486>`;
-
-            return message.channel.send({
-                content: text,
-                allowedMentions: {
-                    parse: []
-                }
-            });
+            await sendLongMessage(
+                message.channel,
+                text
+            );
+            return;
         }
-
-
-        // ==========================================
-        // !saccess
-        // ==========================================
-
-        if (content.toLowerCase() === "!saccess") {
-
+// ==========================================
+// !SACCESS
+// ==========================================
+        if (command === "!saccess") {
             const text = `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
 ### <:Black_Sparkle_Crown:1443171402814591037> __REQUISITOS OFICIALES DE MEMBRESÍA__
-
 > <a:crown_black:1528862538765176922> **BIENVENIDO A NSC**
 >
 > **NSC | No Second Chances** es una pandilla respetada y en rápido crecimiento, construida sobre **lealtad, disciplina, actividad, respeto y compromiso.**
 >
 > La membresía se gana. Antes de solicitar el ingreso, debes completar **TODOS los requisitos** indicados a continuación.
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ## <a:black:1491054403829108877> __REQUISITOS__ <a:black:1491054403829108877>
-
 **<a:Animatedgun:1475190665645129860> 01 | GRUPO OFICIAL DE ROBLOX**
-
 Únete al Grupo Oficial de Roblox de NSC:
 > https://www.roblox.com/share/g/926022365
-
 **<a:red_m4a1:1492343878064275576> 02 | SEGUIR A LOS DUEÑOS**
-
 Sigue a los dos propietarios oficiales de NSC:
 > [Darius](https://www.roblox.com/users/5782622558/profile)
 > [Blastyed](https://www.roblox.com/users/3025544313/profile)
-
 **<:11act:1535721705836642424> 03 | IDENTIFICACIÓN NSC**
-
 Añade **NSC** o **666** tanto a tu nombre de Roblox como a tu nombre de Discord.
-
 **<a:BLACK_CROSS:1535722063996657676> 04 | ANTIGÜEDAD DE LA CUENTA**
-
 Tu cuenta de Roblox debe tener **al menos 1 mes de antigüedad**.
-
 **<a:Black_Planet:1535722235770310658> 05 | REGLAS**
-
 Lee y comprende **todas las reglas de NSC**:
 > <#1502687087584084038>
-
 El incumplimiento de las reglas de NSC puede resultar en medidas disciplinarias.
-
 **<:shiny_red_shield:1526960458458988724> 06 | ACTIVIDAD**
-
 Reacciona a las **4 comprobaciones de actividad más recientes**:
 > <#1524048971667079178>
-
 **<a:black_diamond:1442514695633371178> 07 | INSIGNIAS**
-
 Tu cuenta de Roblox debe tener **al menos una página completa de insignias**.
-
 Tu inventario de Roblox debe estar configurado como **PÚBLICO** para que el Staff pueda verificar tu cuenta.
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ## <a:RED_INS_Verify:1092149695217946664> __PROCESO DE SOLICITUD__ <a:RED_INS_Verify:1092149695217946664>
-
 Una vez que hayas completado **TODOS los requisitos**:
-
 > <a:red:1359058496527794216> **Abre un Ticket de Ingreso a NSC.**
 > <a:red:1359058496527794216> **Proporciona pruebas claras de cada requisito.**
 > <a:red:1359058496527794216> **Espera a que un miembro autorizado del Staff revise tu solicitud.**
-
 <a:redverifycross:1449461247836950750> **Las solicitudes con información incompleta, engañosa o que no pueda ser verificada pueden ser rechazadas o devueltas.**
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ## <:Black_Sparkle_Crown:1443171402814591037> __ESTÁNDAR DE NSC__ <:Black_Sparkle_Crown:1443171402814591037>
-
 Unirte a NSC significa llevar el **nombre de NSC** y representar a la pandilla.
-
 Se espera que cada miembro sea:
-
 **LEAL • ACTIVO • RESPETUOSO • DISCIPLINADO • COMPROMETIDO**
-
 <a:gs_red_flames:1527623825590587424> **Gana tu lugar.**
 <a:gs_red_flames:1527623825590587424> **Demuestra tu lealtad.**
 <a:gs_red_flames:1527623825590587424> **Representa a NSC.**
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 # <a:Red_Crown:1535721885403324486> __NSC | NO SECOND CHANCES__ <a:Red_Crown:1535721885403324486>`;
-
+            await sendLongMessage(
+                message.channel,
+                text
+            );
+            return;
+        }
+// ==========================================
+// !GROUP
+// ==========================================
+        if (command === "!group") {
             return message.channel.send({
-                content: text,
-                allowedMentions: {
-                    parse: []
-                }
+                content:
+                    "https://www.roblox.com/share/g/926022365"
             });
         }
-
-
-        // ==========================================
-        // !roblox
-        // ==========================================
-
-        if (content.toLowerCase() === "!roblox") {
-
-            return message.channel.send(
-                "https://www.roblox.com/share/g/926022365"
-            );
-        }
-
-
-        // ==========================================
-        // !prices
-        // ==========================================
-
-        if (content.toLowerCase() === "!prices") {
-
+// ==========================================
+// !PRICES
+// ==========================================
+        if (command === "!prices") {
             const text = `# <a:Red_Crown:1483487368282374246> NSC PRICES <a:Red_Crown:1483487368282374246>
-
 ## ACCESS
-
 > - **Free Access** — FREE
 > - **Half Access** — 350 Robux | $3.50
 > - **Full Access** — 600 Robux | $8
 > - **Name Skip** — 150 Robux | $1.50
-
 ## STAFF RANKS
-
 -# Limited spots
 - **Trial required before permissions are given.**
-
 > - **Chief of Staff** — $250
 > - **Manager** — $200
 > - **Head Admin** — $160
@@ -267,64 +230,65 @@ Se espera que cada miembro sea:
 > - **Moderator** — $30
 > - **Junior Moderator** — $20
 > - **Trial Moderator** — $10
-
 ## EXTRA
-
 > - **Link Perms** — $3
 > - **Pic Perms** — $3
 > - **Custom Role** — $10
 > - **Private VC** — $15
 > - **Custom Role + Private VC Bundle** — $20 (Best Value)
-
 ## PAYMENTS
-
 > - PayPal (Friends & Family ONLY)
 > - Robux
 > - Server Boosts
 > - Gift Cards (Robux, PS5 & App Store)
-
 ## TERMS AND CONDITIONS
-
 > **Only buy from a Trusted Seller, Owner, or Founder.**
 > **Do NOT send payment until your purchase has been confirmed.**
 > No refunds.
 > Trial is still required for staff ranks.
 > Abuse of purchased roles may result in removal without a refund.
-> Leadership roles are **not for sale**.
+> Leadership roles are **not for sale.**
 > All purchases are final.`;
-
-            return message.channel.send({
-                content: text,
-                allowedMentions: {
-                    parse: []
-                }
-            });
+            await sendLongMessage(
+                message.channel,
+                text
+            );
+            return;
         }
-
-
-        // ==========================================
-        // JSON TRIGGERS
-        // ==========================================
-
-        const triggers = loadTriggers();
-
-        const trigger = Object.keys(triggers).find(
-            key =>
-                key.toLowerCase() ===
-                content.toLowerCase()
-        );
-
+// ==========================================
+// JSON TRIGGERS
+// ==========================================
+        const triggers =
+            loadTriggers();
+        const trigger =
+            Object.keys(triggers).find(
+                key =>
+                    key.toLowerCase() ===
+                    command
+            );
         if (!trigger) return;
-
-        const response = triggers[trigger];
-
-        if (typeof response !== "string") return;
-
-        return message.channel.send({
-            content: response,
-            allowedMentions: {
-                parse: []
-            }
-        });
+        const response =
+            triggers[trigger];
+        if (
+            typeof response !==
+            "string"
+        ) {
+            return;
+        }
+        await sendLongMessage(
+            message.channel,
+            response
+        );
     }
 };
+
+Your commands are now
+
+!access
+!saccess
+!group
+!prices
+
+!access and !saccess will automatically split into multiple Discord messages instead of failing at the 2,000-character limit.
+
+Restart the bot after replacing the file.
