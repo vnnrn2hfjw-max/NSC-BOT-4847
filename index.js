@@ -9,8 +9,7 @@ const {
     GatewayIntentBits
 } = require("discord.js");
 
-console.log("🟢 NSC BOT: index.js started");
-console.log("🟢 Discord.js loaded");
+console.log("🟢 NSC BOT: Starting...");
 
 // ==========================================
 // CLIENT
@@ -30,26 +29,19 @@ client.commands = new Collection();
 console.log("✅ Client created");
 console.log("✅ Message Content Intent enabled");
 
-
 // ==========================================
 // LOAD COMMANDS
 // ==========================================
 
 const commandsPath = path.join(__dirname, "Commands");
 
-console.log(`📂 Commands path: ${commandsPath}`);
-
-if (!fs.existsSync(commandsPath)) {
-
-    console.error("❌ Commands folder does NOT exist!");
-
-} else {
+if (fs.existsSync(commandsPath)) {
 
     const commandFiles = fs
         .readdirSync(commandsPath)
         .filter(file => file.endsWith(".js"));
 
-    console.log(`📋 Found ${commandFiles.length} command files.`);
+    console.log(`📂 Commands: ${commandFiles.length} file(s)`);
 
     for (const file of commandFiles) {
 
@@ -59,12 +51,13 @@ if (!fs.existsSync(commandsPath)) {
                 path.join(commandsPath, file)
             );
 
-            if (!command.data || !command.execute) {
-
+            if (
+                !command.data ||
+                !command.execute
+            ) {
                 console.log(
-                    `⚠️ Skipping ${file} — invalid command format.`
+                    `⚠️ Skipped command: ${file}`
                 );
-
                 continue;
             }
 
@@ -74,17 +67,23 @@ if (!fs.existsSync(commandsPath)) {
             );
 
             console.log(
-                `✅ Loaded command: ${command.data.name}`
+                `✅ Command loaded: ${command.data.name}`
             );
 
         } catch (error) {
 
             console.error(
-                `❌ Error loading ${file}:`,
+                `❌ Command error (${file}):`,
                 error
             );
         }
     }
+
+} else {
+
+    console.log(
+        "⚠️ Commands folder does not exist."
+    );
 }
 
 
@@ -92,13 +91,16 @@ if (!fs.existsSync(commandsPath)) {
 // LOAD EVENTS
 // ==========================================
 
-const eventsPath = path.join(__dirname, "Events");
-
-console.log(`📂 Events path: ${eventsPath}`);
+const eventsPath = path.join(
+    __dirname,
+    "Events"
+);
 
 if (!fs.existsSync(eventsPath)) {
 
-    console.error("❌ Events folder does NOT exist!");
+    console.error(
+        "❌ Events folder does NOT exist!"
+    );
 
 } else {
 
@@ -106,7 +108,9 @@ if (!fs.existsSync(eventsPath)) {
         .readdirSync(eventsPath)
         .filter(file => file.endsWith(".js"));
 
-    console.log(`📋 Found ${eventFiles.length} event files.`);
+    console.log(
+        `📂 Events: ${eventFiles.length} file(s)`
+    );
 
     for (const file of eventFiles) {
 
@@ -116,10 +120,13 @@ if (!fs.existsSync(eventsPath)) {
                 path.join(eventsPath, file)
             );
 
-            if (!event.name || !event.execute) {
+            if (
+                !event.name ||
+                typeof event.execute !== "function"
+            ) {
 
                 console.log(
-                    `⚠️ Skipping ${file} — invalid event format.`
+                    `⚠️ Skipped event: ${file}`
                 );
 
                 continue;
@@ -129,27 +136,35 @@ if (!fs.existsSync(eventsPath)) {
 
                 client.once(
                     event.name,
-                    (...args) =>
-                        event.execute(...args, client)
+                    (...args) => {
+                        event.execute(
+                            ...args,
+                            client
+                        );
+                    }
                 );
 
             } else {
 
                 client.on(
                     event.name,
-                    (...args) =>
-                        event.execute(...args, client)
+                    (...args) => {
+                        event.execute(
+                            ...args,
+                            client
+                        );
+                    }
                 );
             }
 
             console.log(
-                `✅ Loaded event: ${event.name}`
+                `✅ Event loaded: ${event.name}`
             );
 
         } catch (error) {
 
             console.error(
-                `❌ Error loading event ${file}:`,
+                `❌ Event error (${file}):`,
                 error
             );
         }
@@ -158,37 +173,29 @@ if (!fs.existsSync(eventsPath)) {
 
 
 // ==========================================
-// TEST MESSAGE LISTENER
-// ==========================================
-
-client.on("messageCreate", message => {
-
-    console.log(
-        `📨 MESSAGE RECEIVED: "${message.content}" from ${message.author.tag}`
-    );
-
-});
-
-
-// ==========================================
 // GIVEAWAY DATA
 // ==========================================
 
-const giveawayPath = path.join(
+const dataFolder = path.join(
     __dirname,
-    "Data",
+    "Data"
+);
+
+const giveawayPath = path.join(
+    dataFolder,
     "giveaways.json"
 );
 
-function loadGiveaways() {
+function ensureGiveawayFile() {
 
-    const folder = path.dirname(giveawayPath);
+    if (!fs.existsSync(dataFolder)) {
 
-    if (!fs.existsSync(folder)) {
-
-        fs.mkdirSync(folder, {
-            recursive: true
-        });
+        fs.mkdirSync(
+            dataFolder,
+            {
+                recursive: true
+            }
+        );
     }
 
     if (!fs.existsSync(giveawayPath)) {
@@ -198,20 +205,25 @@ function loadGiveaways() {
             "{}"
         );
     }
+}
+
+function loadGiveaways() {
+
+    ensureGiveawayFile();
 
     try {
 
-        return JSON.parse(
-            fs.readFileSync(
-                giveawayPath,
-                "utf8"
-            )
+        const data = fs.readFileSync(
+            giveawayPath,
+            "utf8"
         );
+
+        return JSON.parse(data);
 
     } catch (error) {
 
         console.error(
-            "❌ giveaways.json is invalid:",
+            "❌ Invalid giveaways.json:",
             error
         );
 
@@ -220,6 +232,8 @@ function loadGiveaways() {
 }
 
 function saveGiveaways(data) {
+
+    ensureGiveawayFile();
 
     fs.writeFileSync(
         giveawayPath,
@@ -231,12 +245,19 @@ function saveGiveaways(data) {
     );
 }
 
+
+// ==========================================
+// PICK WINNERS
+// ==========================================
+
 function pickWinners(
     participants,
     amount
 ) {
 
-    const shuffled = [...participants];
+    const shuffled = [
+        ...participants
+    ];
 
     for (
         let i = shuffled.length - 1;
@@ -246,7 +267,8 @@ function pickWinners(
 
         const j =
             Math.floor(
-                Math.random() * (i + 1)
+                Math.random() *
+                (i + 1)
             );
 
         [
@@ -261,7 +283,7 @@ function pickWinners(
     return shuffled.slice(
         0,
         Math.min(
-            amount,
+            Number(amount) || 1,
             shuffled.length
         )
     );
@@ -269,23 +291,28 @@ function pickWinners(
 
 
 // ==========================================
-// GIVEAWAY AUTO END
+// CHECK GIVEAWAYS
 // ==========================================
 
 async function checkGiveaways() {
 
-    const giveaways = loadGiveaways();
+    const giveaways =
+        loadGiveaways();
 
     let changed = false;
 
     for (
-        const giveaway
-        of Object.values(giveaways)
+        const [id, giveaway]
+        of Object.entries(giveaways)
     ) {
 
-        if (giveaway.ended) continue;
+        if (giveaway.ended) {
+            continue;
+        }
 
-        if (!giveaway.endTime) continue;
+        if (!giveaway.endTime) {
+            continue;
+        }
 
         if (
             Date.now() <
@@ -299,15 +326,20 @@ async function checkGiveaways() {
             giveaway.ended = true;
 
             const participants =
-                giveaway.participants || [];
+                Array.isArray(
+                    giveaway.participants
+                )
+                    ? giveaway.participants
+                    : [];
 
             const winners =
                 pickWinners(
                     participants,
-                    Number(giveaway.winners) || 1
+                    giveaway.winners || 1
                 );
 
-            giveaway.winnerIds = winners;
+            giveaway.winnerIds =
+                winners;
 
             changed = true;
 
@@ -316,46 +348,57 @@ async function checkGiveaways() {
                     giveaway.channelId
                 );
 
-            if (!channel) continue;
+            if (!channel) {
+                continue;
+            }
 
             const winnerText =
-                winners.length > 0
+                winners.length
                     ? winners
                         .map(
-                            id => `<@${id}>`
+                            userId =>
+                                `<@${userId}>`
                         )
                         .join(", ")
                     : "Nobody";
 
-            try {
+            // Edit original giveaway message
 
-                const giveawayMessage =
-                    await channel.messages.fetch(
-                        giveaway.messageId
+            if (giveaway.messageId) {
+
+                try {
+
+                    const giveawayMessage =
+                        await channel.messages.fetch(
+                            giveaway.messageId
+                        );
+
+                    await giveawayMessage.edit({
+                        content:
+                            `🎉 **GIVEAWAY ENDED!**\n\n` +
+                            `🎁 **Prize:** ${giveaway.prize}\n` +
+                            `🏆 **Winner${winners.length === 1 ? "" : "s"}:** ${winnerText}`,
+
+                        components: []
+                    });
+
+                } catch (error) {
+
+                    console.error(
+                        "⚠️ Could not edit giveaway message:",
+                        error.message
                     );
-
-                await giveawayMessage.edit({
-                    content:
-                        `🎉 **GIVEAWAY ENDED!**\n\n` +
-                        `🎁 **Prize:** ${giveaway.prize}\n` +
-                        `🏆 **Winner${winners.length === 1 ? "" : "s"}:** ${winnerText}`,
-
-                    components: []
-                });
-
-            } catch (error) {
-
-                console.error(
-                    "⚠️ Could not edit giveaway message:",
-                    error.message
-                );
+                }
             }
+
+            // Announce winners
 
             if (winners.length > 0) {
 
                 await channel.send({
                     content:
-                        `🎉 Congratulations ${winnerText}! You won **${giveaway.prize}**!`,
+                        `🎉 Congratulations ${winnerText}! ` +
+                        `You won **${giveaway.prize}**!`,
 
                     allowedMentions: {
                         users: winners
@@ -369,10 +412,14 @@ async function checkGiveaways() {
                 );
             }
 
+            console.log(
+                `🎉 Giveaway ended: ${id}`
+            );
+
         } catch (error) {
 
             console.error(
-                "❌ Giveaway error:",
+                `❌ Giveaway ${id} error:`,
                 error
             );
         }
@@ -382,6 +429,11 @@ async function checkGiveaways() {
         saveGiveaways(giveaways);
     }
 }
+
+
+// ==========================================
+// GIVEAWAY CHECKER
+// ==========================================
 
 setInterval(
     checkGiveaways,
@@ -399,11 +451,15 @@ client.once(
 
         console.log("");
         console.log(
-            "=================================="
+            "======================================"
         );
 
         console.log(
-            `🟢 NSC BOT ONLINE: ${client.user.tag}`
+            `🟢 NSC BOT ONLINE`
+        );
+
+        console.log(
+            `🤖 ${client.user.tag}`
         );
 
         console.log(
@@ -415,7 +471,7 @@ client.once(
         );
 
         console.log(
-            "=================================="
+            "======================================"
         );
 
         await checkGiveaways();
@@ -438,10 +494,17 @@ if (!process.env.TOKEN) {
 
 client.login(
     process.env.TOKEN
-).catch(error => {
+).then(() => {
+
+    console.log(
+        "🔐 Login request sent..."
+    );
+
+}).catch(error => {
 
     console.error(
         "❌ Discord login failed:",
         error
     );
+
 });
