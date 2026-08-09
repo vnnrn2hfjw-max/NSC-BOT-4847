@@ -1,64 +1,41 @@
-const fs = require("fs");
-const path = require("path");
-
-
 // ==============================
-// TRIGGER DATA
-// ==============================
-
-const DATA_FILE = path.join(
-  __dirname,
-  "..",
-  "Data",
-  "triggers.json"
-);
-
-
-// ==============================
-// SEND LONG MESSAGE
+// NSC TRIGGER SYSTEM
 // ==============================
 
 async function sendLongMessage(channel, text) {
+    const MAX_LENGTH = 2000;
 
-  const MAX_LENGTH = 2000;
-
-  if (text.length <= MAX_LENGTH) {
-    return channel.send(text);
-  }
-
-  let remaining = text;
-
-  while (remaining.length > MAX_LENGTH) {
-
-    let splitAt =
-      remaining.lastIndexOf("\n", MAX_LENGTH);
-
-    if (splitAt <= 0) {
-      splitAt = MAX_LENGTH;
+    if (text.length <= MAX_LENGTH) {
+        return channel.send(text);
     }
 
-    const part =
-      remaining.slice(0, splitAt);
+    let remaining = text;
 
-    await channel.send(part);
+    while (remaining.length > MAX_LENGTH) {
+        let splitAt = remaining.lastIndexOf("\n", MAX_LENGTH);
 
-    remaining =
-      remaining.slice(splitAt).trimStart();
-  }
+        if (splitAt <= 0) {
+            splitAt = MAX_LENGTH;
+        }
 
-  if (remaining.length > 0) {
-    await channel.send(remaining);
-  }
+        await channel.send(remaining.slice(0, splitAt));
+        remaining = remaining.slice(splitAt).trimStart();
+    }
+
+    if (remaining.length > 0) {
+        await channel.send(remaining);
+    }
 }
 
 
 // ==============================
-// TRIGGER RESPONSES
+// TRIGGERS
 // ==============================
 
 const triggers = {
 
-  ",access": `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
+    ",access": `# <a:Red_Crown:1483487368282374246> <a:BLACK_CROSS:1535722063996657676> __NSC | NO SECOND CHANCES__ <a:BLACK_CROSS:1535722063996657676> <a:Red_Crown:1483487368282374246>
+
 ### <:Black_Sparkle_Crown:1443171402814591037> __OFFICIAL MEMBERSHIP REQUIREMENTS__
 
 > <a:crown_black:1528862538765176922> **WELCOME TO NSC**
@@ -138,7 +115,10 @@ Every member is expected to remain:
 
 # <a:Red_Crown:1535721885403324486> __NSC | NO SECOND CHANCES__ <a:Red_Crown:1535721885403324486>`,
 
-  ",saccess": `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
+
+
+    ",saccess": `# <a:Red_Crown:1483487368282374246> <a:BLACK_CROSS:1535722063996657676> __NSC | NO SECOND CHANCES__ <a:BLACK_CROSS:1535722063996657676> <a:Red_Crown:1483487368282374246>
+
 ### <:Black_Sparkle_Crown:1443171402814591037> __REQUISITOS OFICIALES DE MEMBRESÍA__
 
 > <a:crown_black:1528862538765176922> **BIENVENIDO A NSC**
@@ -208,21 +188,36 @@ Unirte a NSC significa llevar el **nombre de NSC** y representar a la pandilla.
 
 Se espera que cada miembro sea:
 
-**LEAL • ACTIVO • RESPETUOSO • DISCIPLINADO • COMPROMETIDO**`,
+**LEAL • ACTIVO • RESPETUOSO • DISCIPLINADO • COMPROMETIDO**
 
-  ",Roblox": `https://www.roblox.com/share/g/926022365`,
+<a:gs_red_flames:1527623825590587424> **Gana tu lugar.**
+<a:gs_red_flames:1527623825590587424> **Demuestra tu lealtad.**
+<a:gs_red_flames:1527623825590587424> **Representa a NSC.**
 
-  ",prices": `# NSC PRICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## ACCESS ##
+# <a:Red_Crown:1535721885403324486> __NSC | NO SECOND CHANCES__ <a:Red_Crown:1535721885403324486>`,
+
+
+
+    ",Roblox": `https://www.roblox.com/share/g/926022365`,
+
+
+
+    ",prices": `# <a:Red_Crown:1483487368282374246> NSC PRICES <a:Red_Crown:1483487368282374246>
+
+## <a:Animatedgun:1475190665645129860> ACCESS
+
 > - Free Access — FREE
 > - Half Access — 350 Robux | $3.50
 > - Full Access — 600 Robux | $8
 > - Name Skip — 150 Robux | $1.50
 
-## STAFF RANKS ##
+## <a:RED_INS_Verify:1092149695217946664> STAFF RANKS
+
 -# Limited spots
 - **Trial required before permissions are given.**
+
 > - Chief of Staff — $250
 > - Manager — $200
 > - Head Admin — $160
@@ -235,20 +230,23 @@ Se espera que cada miembro sea:
 > - Junior Moderator — $20
 > - Trial Moderator — $10
 
-## EXTRA ##
+## <a:black_diamond:1442514695633371178> EXTRA
+
 > - Link Perms — $3
 > - Pic Perms — $3
 > - Custom Role — $10
 > - Private VC — $15
 > - Custom Role + Private VC Bundle — $20 (Best Value)
 
-## PAYMENTS ##
+## <a:RED_INS_Verify:1092149695217946664> PAYMENTS
+
 > - PayPal (Friends & Family ONLY)
 > - Robux
 > - Server Boosts
 > - Gift Cards (Robux, PS5 & App Store)
 
-## TERMS AND CONDITIONS ##
+## <a:BLACK_CROSS:1535722063996657676> TERMS AND CONDITIONS
+
 > **Only buy from a Trusted Seller, Owner, or Founder.**
 > **Do NOT send payment until your purchase has been confirmed.**
 > No refunds.
@@ -260,46 +258,41 @@ Se espera que cada miembro sea:
 
 
 // ==============================
-// MESSAGE CREATE
+// MESSAGE EVENT
 // ==============================
 
 module.exports = {
+    name: "messageCreate",
 
-  name: "messageCreate",
+    async execute(message) {
 
-  async execute(message) {
+        // Ignore bots
+        if (message.author.bot) return;
 
-    // Ignore bots
-    if (message.author.bot) return;
+        const content = message.content.trim().toLowerCase();
 
-    // Exact trigger only
-    const trigger =
-      message.content.trim().toLowerCase();
+        // Find matching trigger
+        const trigger = Object.keys(triggers).find(
+            key => key.toLowerCase() === content
+        );
 
-    // Find response
-    const response =
-      Object.keys(triggers).find(
-        key => key.toLowerCase() === trigger
-      );
+        if (!trigger) return;
 
-    if (!response) return;
+        try {
+            await sendLongMessage(
+                message.channel,
+                triggers[trigger]
+            );
 
-    try {
+            console.log(
+                `⚡ Trigger used: ${trigger} by ${message.author.tag}`
+            );
 
-      await sendLongMessage(
-        message.channel,
-        triggers[response]
-      );
-
-    } catch (error) {
-
-      console.error(
-        "❌ Trigger error:",
-        error
-      );
-
+        } catch (error) {
+            console.error(
+                `❌ Trigger error (${trigger}):`,
+                error
+            );
+        }
     }
-
-  }
-
 };
