@@ -1,48 +1,91 @@
 const fs = require("fs");
 const path = require("path");
 
-const DATA_FILE = path.join(
+
+// ==========================================
+// TRIGGER FILE
+// ==========================================
+
+const DATA_FOLDER = path.join(
     __dirname,
     "..",
-    "Data",
+    "Data"
+);
+
+const TRIGGER_FILE = path.join(
+    DATA_FOLDER,
     "triggers.json"
 );
 
+
 function loadTriggers() {
-    if (!fs.existsSync(DATA_FILE)) {
-        return {};
+
+    if (!fs.existsSync(DATA_FOLDER)) {
+
+        fs.mkdirSync(
+            DATA_FOLDER,
+            {
+                recursive: true
+            }
+        );
+    }
+
+    if (!fs.existsSync(TRIGGER_FILE)) {
+
+        fs.writeFileSync(
+            TRIGGER_FILE,
+            "{}"
+        );
     }
 
     try {
+
         return JSON.parse(
-            fs.readFileSync(DATA_FILE, "utf8")
+            fs.readFileSync(
+                TRIGGER_FILE,
+                "utf8"
+            )
         );
-    } catch {
+
+    } catch (error) {
+
+        console.error(
+            "❌ triggers.json is invalid:",
+            error
+        );
+
         return {};
     }
 }
 
-function saveTriggers(data) {
-    fs.writeFileSync(
-        DATA_FILE,
-        JSON.stringify(data, null, 2)
-    );
-}
+
+// ==========================================
+// EVENT
+// ==========================================
 
 module.exports = {
+
     name: "messageCreate",
 
     async execute(message) {
+
+        // Ignore bots
         if (message.author.bot) return;
 
-        const triggers = loadTriggers();
-        const content = message.content.trim();
+        const content =
+            message.content.trim();
 
-        // ==========================================
+        if (!content) return;
+
+
+        // ======================================
         // ACCESS — ENGLISH
-        // ==========================================
+        // ======================================
 
-        if (content.toLowerCase() === ",access") {
+        if (
+            content.toLowerCase() ===
+            ",access"
+        ) {
 
             const text = `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
 ### <:Black_Sparkle_Crown:1443171402814591037> __OFFICIAL MEMBERSHIP REQUIREMENTS__
@@ -132,11 +175,15 @@ Every member is expected to remain:
             });
         }
 
-        // ==========================================
-        // SACCESS — SPANISH
-        // ==========================================
 
-        if (content.toLowerCase() === ",saccess") {
+        // ======================================
+        // SACCESS — SPANISH
+        // ======================================
+
+        if (
+            content.toLowerCase() ===
+            ",saccess"
+        ) {
 
             const text = `# <a:Red_Crown:1483487368282374246> <<a:BLACK_CROSS:1535722063996657676>> __NSC | NO SECOND CHANCES__ <<a:BLACK_CROSS:1535722063996657676>> <a:Red_Crown:1483487368282374246>
 ### <:Black_Sparkle_Crown:1443171402814591037> __REQUISITOS OFICIALES DE MEMBRESÍA__
@@ -226,22 +273,30 @@ Se espera que cada miembro sea:
             });
         }
 
-        // ==========================================
-        // ROBLOX
-        // ==========================================
 
-        if (content.toLowerCase() === ",roblox") {
+        // ======================================
+        // ROBLOX
+        // ======================================
+
+        if (
+            content.toLowerCase() ===
+            ",roblox"
+        ) {
 
             return message.channel.send(
                 "https://www.roblox.com/share/g/926022365"
             );
         }
 
-        // ==========================================
-        // PRICES
-        // ==========================================
 
-        if (content.toLowerCase() === ",prices") {
+        // ======================================
+        // PRICES
+        // ======================================
+
+        if (
+            content.toLowerCase() ===
+            ",prices"
+        ) {
 
             const text = `# <a:Red_Crown:1483487368282374246> NSC PRICES <a:Red_Crown:1483487368282374246>
 
@@ -302,9 +357,13 @@ Se espera que cada miembro sea:
             });
         }
 
-        // ==========================================
-        // SAVED TRIGGERS
-        // ==========================================
+
+        // ======================================
+        // JSON TRIGGERS
+        // ======================================
+
+        const triggers =
+            loadTriggers();
 
         const trigger =
             Object.keys(triggers).find(
@@ -318,7 +377,12 @@ Se espera que cada miembro sea:
         const response =
             triggers[trigger];
 
-        if (!response) return;
+        if (
+            typeof response !==
+            "string"
+        ) {
+            return;
+        }
 
         return message.channel.send({
             content: response,
