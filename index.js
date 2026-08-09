@@ -9,6 +9,8 @@ const {
     GatewayIntentBits
 } = require("discord.js");
 
+console.log("🟢 NSC BOT: index.js started");
+console.log("🟢 Discord.js loaded");
 
 // ==========================================
 // CLIENT
@@ -25,12 +27,17 @@ const client = new Client({
 
 client.commands = new Collection();
 
+console.log("✅ Client created");
+console.log("✅ Message Content Intent enabled");
+
 
 // ==========================================
 // LOAD COMMANDS
 // ==========================================
 
 const commandsPath = path.join(__dirname, "Commands");
+
+console.log(`📂 Commands path: ${commandsPath}`);
 
 if (!fs.existsSync(commandsPath)) {
 
@@ -42,7 +49,7 @@ if (!fs.existsSync(commandsPath)) {
         .readdirSync(commandsPath)
         .filter(file => file.endsWith(".js"));
 
-    console.log(`📂 Found ${commandFiles.length} command files.`);
+    console.log(`📋 Found ${commandFiles.length} command files.`);
 
     for (const file of commandFiles) {
 
@@ -87,6 +94,8 @@ if (!fs.existsSync(commandsPath)) {
 
 const eventsPath = path.join(__dirname, "Events");
 
+console.log(`📂 Events path: ${eventsPath}`);
+
 if (!fs.existsSync(eventsPath)) {
 
     console.error("❌ Events folder does NOT exist!");
@@ -97,9 +106,7 @@ if (!fs.existsSync(eventsPath)) {
         .readdirSync(eventsPath)
         .filter(file => file.endsWith(".js"));
 
-    console.log(
-        `📂 Found ${eventFiles.length} event files.`
-    );
+    console.log(`📋 Found ${eventFiles.length} event files.`);
 
     for (const file of eventFiles) {
 
@@ -151,6 +158,19 @@ if (!fs.existsSync(eventsPath)) {
 
 
 // ==========================================
+// TEST MESSAGE LISTENER
+// ==========================================
+
+client.on("messageCreate", message => {
+
+    console.log(
+        `📨 MESSAGE RECEIVED: "${message.content}" from ${message.author.tag}`
+    );
+
+});
+
+
+// ==========================================
 // GIVEAWAY DATA
 // ==========================================
 
@@ -160,12 +180,12 @@ const giveawayPath = path.join(
     "giveaways.json"
 );
 
-
 function loadGiveaways() {
 
     const folder = path.dirname(giveawayPath);
 
     if (!fs.existsSync(folder)) {
+
         fs.mkdirSync(folder, {
             recursive: true
         });
@@ -191,13 +211,13 @@ function loadGiveaways() {
     } catch (error) {
 
         console.error(
-            "❌ giveaways.json is invalid."
+            "❌ giveaways.json is invalid:",
+            error
         );
 
         return {};
     }
 }
-
 
 function saveGiveaways(data) {
 
@@ -210,7 +230,6 @@ function saveGiveaways(data) {
         )
     );
 }
-
 
 function pickWinners(
     participants,
@@ -255,8 +274,7 @@ function pickWinners(
 
 async function checkGiveaways() {
 
-    const giveaways =
-        loadGiveaways();
+    const giveaways = loadGiveaways();
 
     let changed = false;
 
@@ -289,11 +307,9 @@ async function checkGiveaways() {
                     Number(giveaway.winners) || 1
                 );
 
-            giveaway.winnerIds =
-                winners;
+            giveaway.winnerIds = winners;
 
             changed = true;
-
 
             const channel =
                 await client.channels.fetch(
@@ -301,7 +317,6 @@ async function checkGiveaways() {
                 );
 
             if (!channel) continue;
-
 
             const winnerText =
                 winners.length > 0
@@ -312,19 +327,19 @@ async function checkGiveaways() {
                         .join(", ")
                     : "Nobody";
 
-
             try {
 
-                const message =
+                const giveawayMessage =
                     await channel.messages.fetch(
                         giveaway.messageId
                     );
 
-                await message.edit({
+                await giveawayMessage.edit({
                     content:
                         `🎉 **GIVEAWAY ENDED!**\n\n` +
                         `🎁 **Prize:** ${giveaway.prize}\n` +
                         `🏆 **Winner${winners.length === 1 ? "" : "s"}:** ${winnerText}`,
+
                     components: []
                 });
 
@@ -336,12 +351,12 @@ async function checkGiveaways() {
                 );
             }
 
-
             if (winners.length > 0) {
 
                 await channel.send({
                     content:
                         `🎉 Congratulations ${winnerText}! You won **${giveaway.prize}**!`,
+
                     allowedMentions: {
                         users: winners
                     }
@@ -368,8 +383,6 @@ async function checkGiveaways() {
     }
 }
 
-
-// Check every 5 seconds
 setInterval(
     checkGiveaways,
     5000
@@ -422,7 +435,6 @@ if (!process.env.TOKEN) {
 
     process.exit(1);
 }
-
 
 client.login(
     process.env.TOKEN
