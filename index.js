@@ -1,204 +1,435 @@
-const {
-    EmbedBuilder
-} = require("discord.js");
+require("dotenv").config();
 
 const fs = require("fs");
 const path = require("path");
 
-const DATA_FILE = path.join(
+const {
+    Client,
+    Collection,
+    GatewayIntentBits
+} = require("discord.js");
+
+
+// ==========================================
+// CLIENT
+// ==========================================
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers
+    ]
+});
+
+client.commands = new Collection();
+
+
+// ==========================================
+// LOAD COMMANDS
+// ==========================================
+
+const commandsPath = path.join(__dirname, "Commands");
+
+if (!fs.existsSync(commandsPath)) {
+
+    console.error("❌ Commands folder does NOT exist!");
+
+} else {
+
+    const commandFiles = fs
+        .readdirSync(commandsPath)
+        .filter(file => file.endsWith(".js"));
+
+    console.log(`📂 Found ${commandFiles.length} command files.`);
+
+    for (const file of commandFiles) {
+
+        try {
+
+            const command = require(
+                path.join(commandsPath, file)
+            );
+
+            if (!command.data || !command.execute) {
+
+                console.log(
+                    `⚠️ Skipping ${file} — invalid command format.`
+                );
+
+                continue;
+            }
+
+            client.commands.set(
+                command.data.name,
+                command
+            );
+
+            console.log(
+                `✅ Loaded command: ${command.data.name}`
+            );
+
+        } catch (error) {
+
+            console.error(
+                `❌ Error loading ${file}:`,
+                error
+            );
+        }
+    }
+}
+
+
+// ==========================================
+// LOAD EVENTS
+// ==========================================
+
+const eventsPath = path.join(__dirname, "Events");
+
+if (!fs.existsSync(eventsPath)) {
+
+    console.error("❌ Events folder does NOT exist!");
+
+} else {
+
+    const eventFiles = fs
+        .readdirSync(eventsPath)
+        .filter(file => file.endsWith(".js"));
+
+    console.log(
+        `📂 Found ${eventFiles.length} event files.`
+    );
+
+    for (const file of eventFiles) {
+
+        try {
+
+            const event = require(
+                path.join(eventsPath, file)
+            );
+
+            if (!event.name || !event.execute) {
+
+                console.log(
+                    `⚠️ Skipping ${file} — invalid event format.`
+                );
+
+                continue;
+            }
+
+            if (event.once) {
+
+                client.once(
+                    event.name,
+                    (...args) =>
+                        event.execute(...args, client)
+                );
+
+            } else {
+
+                client.on(
+                    event.name,
+                    (...args) =>
+                        event.execute(...args, client)
+                );
+            }
+
+            console.log(
+                `✅ Loaded event: ${event.name}`
+            );
+
+        } catch (error) {
+
+            console.error(
+                `❌ Error loading event ${file}:`,
+                error
+            );
+        }
+    }
+}
+
+
+// ==========================================
+// GIVEAWAY DATA
+// ==========================================
+
+const giveawayPath = path.join(
     __dirname,
-    "..",
     "Data",
     "giveaways.json"
 );
 
 
-// ==========================================
-// DATA
-// ==========================================
-
 function loadGiveaways() {
-    if (!fs.existsSync(DATA_FILE)) {
-        fs.writeFileSync(DATA_FILE, "{}");
+
+    const folder = path.dirname(giveawayPath);
+
+    if (!fs.existsSync(folder)) {
+        fs.mkdirSync(folder, {
+            recursive: true
+        });
+    }
+
+    if (!fs.existsSync(giveawayPath)) {
+
+        fs.writeFileSync(
+            giveawayPath,
+            "{}"
+        );
     }
 
     try {
+
         return JSON.parse(
-            fs.readFileSync(DATA_FILE, "utf8")
+            fs.readFileSync(
+                giveawayPath,
+                "utf8"
+            )
         );
-    } catch {
+
+    } catch (error) {
+
+        console.error(
+            "❌ giveaways.json is invalid."
+        );
+
         return {};
     }
 }
 
+
 function saveGiveaways(data) {
+
     fs.writeFileSync(
-        DATA_FILE,
-        JSON.stringify(data, null, 2)
+        giveawayPath,
+        JSON.stringify(
+            data,
+            null,
+            2
+        )
     );
 }
 
 
-// ==========================================
-// RANDOM WINNERS
-// ==========================================
+function pickWinners(
+    participants,
+    amount
+) {
 
-function pickWinners(participants, amount) {
+    const shuffled = [...participants];
 
-    const shuffled =
-        [...participants].sort(
-            () => Math.random() - 0.5
-        );
+    for (
+        let i = shuffled.length - 1;
+        i > 0;
+        i--
+    ) {
+
+        const j =
+            Math.floor(
+                Math.random() * (i + 1)
+            );
+
+        [
+            shuffled[i],
+            shuffled[j]
+        ] = [
+            shuffled[j],
+            shuffled[i]
+        ];
+    }
 
     return shuffled.slice(
         0,
-        Math.min(amount, shuffled.length)
+        Math.min(
+            amount,
+            shuffled.length
+        )
     );
 }
 
 
 // ==========================================
-// INTERACTION
+// GIVEAWAY AUTO END
 // ==========================================
 
-module.exports = {
+async function checkGiveaways() {
 
-    name: "interactionCreate",
+    const giveaways =
+        loadGiveaways();
 
-    async execute(interaction) {
+    let changed = false;
 
-        // ======================================
-        // SLASH COMMANDS
-        // ======================================
+    for (
+        const giveaway
+        of Object.values(giveaways)
+    ) {
 
-        if (interaction.isChatInputCommand()) {
+        if (giveaway.ended) continue;
 
-            const command =
-                interaction.client.commands.get(
-                    interaction.commandName
+        if (!giveaway.endTime) continue;
+
+        if (
+            Date.now() <
+            Number(giveaway.endTime)
+        ) {
+            continue;
+        }
+
+        try {
+
+            giveaway.ended = true;
+
+            const participants =
+                giveaway.participants || [];
+
+            const winners =
+                pickWinners(
+                    participants,
+                    Number(giveaway.winners) || 1
                 );
 
-            if (!command) return;
+            giveaway.winnerIds =
+                winners;
+
+            changed = true;
+
+
+            const channel =
+                await client.channels.fetch(
+                    giveaway.channelId
+                );
+
+            if (!channel) continue;
+
+
+            const winnerText =
+                winners.length > 0
+                    ? winners
+                        .map(
+                            id => `<@${id}>`
+                        )
+                        .join(", ")
+                    : "Nobody";
+
 
             try {
 
-                await command.execute(interaction);
+                const message =
+                    await channel.messages.fetch(
+                        giveaway.messageId
+                    );
+
+                await message.edit({
+                    content:
+                        `🎉 **GIVEAWAY ENDED!**\n\n` +
+                        `🎁 **Prize:** ${giveaway.prize}\n` +
+                        `🏆 **Winner${winners.length === 1 ? "" : "s"}:** ${winnerText}`,
+                    components: []
+                });
 
             } catch (error) {
 
                 console.error(
-                    `❌ Command error: ${interaction.commandName}`,
-                    error
+                    "⚠️ Could not edit giveaway message:",
+                    error.message
                 );
-
-                if (interaction.replied || interaction.deferred) {
-
-                    await interaction.followUp({
-                        content:
-                            "❌ Something went wrong while running this command.",
-                        ephemeral: true
-                    });
-
-                } else {
-
-                    await interaction.reply({
-                        content:
-                            "❌ Something went wrong while running this command.",
-                        ephemeral: true
-                    });
-
-                }
             }
 
-            return;
-        }
 
+            if (winners.length > 0) {
 
-        // ======================================
-        // GIVEAWAY BUTTON
-        // ======================================
+                await channel.send({
+                    content:
+                        `🎉 Congratulations ${winnerText}! You won **${giveaway.prize}**!`,
+                    allowedMentions: {
+                        users: winners
+                    }
+                });
 
-        if (!interaction.isButton()) return;
+            } else {
 
-        if (
-            !interaction.customId.startsWith(
-                "giveaway_enter_"
-            )
-        ) {
-            return;
-        }
+                await channel.send(
+                    `❌ The giveaway for **${giveaway.prize}** ended with no participants.`
+                );
+            }
 
+        } catch (error) {
 
-        const giveawayId =
-            interaction.customId.replace(
-                "giveaway_enter_",
-                ""
+            console.error(
+                "❌ Giveaway error:",
+                error
             );
-
-
-        const giveaways =
-            loadGiveaways();
-
-        const giveaway =
-            giveaways[giveawayId];
-
-
-        if (!giveaway) {
-
-            return interaction.reply({
-                content:
-                    "❌ This giveaway no longer exists.",
-                ephemeral: true
-            });
-
         }
+    }
+
+    if (changed) {
+        saveGiveaways(giveaways);
+    }
+}
 
 
-        if (giveaway.ended) {
-
-            return interaction.reply({
-                content:
-                    "❌ This giveaway has already ended.",
-                ephemeral: true
-            });
-
-        }
+// Check every 5 seconds
+setInterval(
+    checkGiveaways,
+    5000
+);
 
 
-        // ======================================
-        // ALREADY ENTERED
-        // ======================================
+// ==========================================
+// READY
+// ==========================================
 
-        if (
-            giveaway.participants.includes(
-                interaction.user.id
-            )
-        ) {
+client.once(
+    "ready",
+    async () => {
 
-            return interaction.reply({
-                content:
-                    "❌ You are already entered in this giveaway!",
-                ephemeral: true
-            });
-
-        }
-
-
-        // ======================================
-        // ADD PARTICIPANT
-        // ======================================
-
-        giveaway.participants.push(
-            interaction.user.id
+        console.log("");
+        console.log(
+            "=================================="
         );
 
-        saveGiveaways(giveaways);
+        console.log(
+            `🟢 NSC BOT ONLINE: ${client.user.tag}`
+        );
 
+        console.log(
+            `📊 Servers: ${client.guilds.cache.size}`
+        );
 
-        return interaction.reply({
-            content:
-                "🎉 You have successfully entered the giveaway!",
-            ephemeral: true
-        });
+        console.log(
+            `⚡ Commands: ${client.commands.size}`
+        );
+
+        console.log(
+            "=================================="
+        );
+
+        await checkGiveaways();
     }
-};
+);
+
+
+// ==========================================
+// LOGIN
+// ==========================================
+
+if (!process.env.TOKEN) {
+
+    console.error(
+        "❌ TOKEN is missing from .env!"
+    );
+
+    process.exit(1);
+}
+
+
+client.login(
+    process.env.TOKEN
+).catch(error => {
+
+    console.error(
+        "❌ Discord login failed:",
+        error
+    );
+});
