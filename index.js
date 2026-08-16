@@ -6,14 +6,10 @@ const path = require("path");
 const {
     Client,
     Collection,
-    GatewayIntentBits
+    GatewayIntentBits,
+    REST,
+    Routes
 } = require("discord.js");
-
-console.log("🟢 NSC BOT: Starting...");
-
-// ==========================================
-// CLIENT
-// ==========================================
 
 const client = new Client({
     intents: [
@@ -26,22 +22,31 @@ const client = new Client({
 
 client.commands = new Collection();
 
-console.log("✅ Client created");
-console.log("✅ Message Content Intent enabled");
 
 // ==========================================
 // LOAD COMMANDS
 // ==========================================
 
-const commandsPath = path.join(__dirname, "Commands");
+const commandsPath = path.join(
+    __dirname,
+    "Commands"
+);
 
-if (fs.existsSync(commandsPath)) {
+const commands = [];
+
+if (!fs.existsSync(commandsPath)) {
+
+    console.error("Commands folder does not exist!");
+
+} else {
 
     const commandFiles = fs
         .readdirSync(commandsPath)
         .filter(file => file.endsWith(".js"));
 
-    console.log(`📂 Commands: ${commandFiles.length} file(s)`);
+    console.log(
+        `Commands: ${commandFiles.length} file(s)`
+    );
 
     for (const file of commandFiles) {
 
@@ -51,13 +56,12 @@ if (fs.existsSync(commandsPath)) {
                 path.join(commandsPath, file)
             );
 
-            if (
-                !command.data ||
-                !command.execute
-            ) {
+            if (!command.data || !command.execute) {
+
                 console.log(
-                    `⚠️ Skipped command: ${file}`
+                    `Skipping invalid command: ${file}`
                 );
+
                 continue;
             }
 
@@ -66,24 +70,22 @@ if (fs.existsSync(commandsPath)) {
                 command
             );
 
+            commands.push(
+                command.data.toJSON()
+            );
+
             console.log(
-                `✅ Command loaded: ${command.data.name}`
+                `Command loaded: ${command.data.name}`
             );
 
         } catch (error) {
 
             console.error(
-                `❌ Command error (${file}):`,
+                `Command error (${file}):`,
                 error
             );
         }
     }
-
-} else {
-
-    console.log(
-        "⚠️ Commands folder does not exist."
-    );
 }
 
 
@@ -99,7 +101,7 @@ const eventsPath = path.join(
 if (!fs.existsSync(eventsPath)) {
 
     console.error(
-        "❌ Events folder does NOT exist!"
+        "Events folder does not exist!"
     );
 
 } else {
@@ -109,7 +111,7 @@ if (!fs.existsSync(eventsPath)) {
         .filter(file => file.endsWith(".js"));
 
     console.log(
-        `📂 Events: ${eventFiles.length} file(s)`
+        `Events: ${eventFiles.length} file(s)`
     );
 
     for (const file of eventFiles) {
@@ -120,13 +122,10 @@ if (!fs.existsSync(eventsPath)) {
                 path.join(eventsPath, file)
             );
 
-            if (
-                !event.name ||
-                typeof event.execute !== "function"
-            ) {
+            if (!event.name || !event.execute) {
 
                 console.log(
-                    `⚠️ Skipped event: ${file}`
+                    `Skipping invalid event: ${file}`
                 );
 
                 continue;
@@ -136,35 +135,33 @@ if (!fs.existsSync(eventsPath)) {
 
                 client.once(
                     event.name,
-                    (...args) => {
+                    (...args) =>
                         event.execute(
                             ...args,
                             client
-                        );
-                    }
+                        )
                 );
 
             } else {
 
                 client.on(
                     event.name,
-                    (...args) => {
+                    (...args) =>
                         event.execute(
                             ...args,
                             client
-                        );
-                    }
+                        )
                 );
             }
 
             console.log(
-                `✅ Event loaded: ${event.name}`
+                `Event loaded: ${event.name}`
             );
 
         } catch (error) {
 
             console.error(
-                `❌ Event error (${file}):`,
+                `Event error (${file}):`,
                 error
             );
         }
@@ -173,272 +170,68 @@ if (!fs.existsSync(eventsPath)) {
 
 
 // ==========================================
-// GIVEAWAY DATA
+// REGISTER SLASH COMMANDS
 // ==========================================
 
-const dataFolder = path.join(
-    __dirname,
-    "Data"
-);
+async function registerCommands() {
 
-const giveawayPath = path.join(
-    dataFolder,
-    "giveaways.json"
-);
-
-function ensureGiveawayFile() {
-
-    if (!fs.existsSync(dataFolder)) {
-
-        fs.mkdirSync(
-            dataFolder,
-            {
-                recursive: true
-            }
-        );
+    if (!process.env.TOKEN) {
+        console.error("TOKEN is missing!");
+        return;
     }
 
-    if (!fs.existsSync(giveawayPath)) {
-
-        fs.writeFileSync(
-            giveawayPath,
-            "{}"
-        );
+    if (!process.env.CLIENT_ID) {
+        console.error("CLIENT_ID is missing!");
+        return;
     }
-}
 
-function loadGiveaways() {
-
-    ensureGiveawayFile();
+    if (!process.env.GUILD_ID) {
+        console.error("GUILD_ID is missing!");
+        return;
+    }
 
     try {
 
-        const data = fs.readFileSync(
-            giveawayPath,
-            "utf8"
+        const rest = new REST({
+            version: "10"
+        }).setToken(
+            process.env.TOKEN
         );
 
-        return JSON.parse(data);
+        console.log(
+            `Registering ${commands.length} slash command(s)...`
+        );
+
+        await rest.put(
+            Routes.applicationGuildCommands(
+                process.env.CLIENT_ID,
+                process.env.GUILD_ID
+            ),
+            {
+                body: commands
+            }
+        );
+
+        console.log(
+            "Slash commands registered successfully!"
+        );
+
+        for (const command of commands) {
+
+            console.log(
+                `Registered: /${command.name}`
+            );
+        }
 
     } catch (error) {
 
         console.error(
-            "❌ Invalid giveaways.json:",
-            error
+            "Slash command registration failed:"
         );
 
-        return {};
+        console.error(error);
     }
 }
-
-function saveGiveaways(data) {
-
-    ensureGiveawayFile();
-
-    fs.writeFileSync(
-        giveawayPath,
-        JSON.stringify(
-            data,
-            null,
-            2
-        )
-    );
-}
-
-
-// ==========================================
-// PICK WINNERS
-// ==========================================
-
-function pickWinners(
-    participants,
-    amount
-) {
-
-    const shuffled = [
-        ...participants
-    ];
-
-    for (
-        let i = shuffled.length - 1;
-        i > 0;
-        i--
-    ) {
-
-        const j =
-            Math.floor(
-                Math.random() *
-                (i + 1)
-            );
-
-        [
-            shuffled[i],
-            shuffled[j]
-        ] = [
-            shuffled[j],
-            shuffled[i]
-        ];
-    }
-
-    return shuffled.slice(
-        0,
-        Math.min(
-            Number(amount) || 1,
-            shuffled.length
-        )
-    );
-}
-
-
-// ==========================================
-// CHECK GIVEAWAYS
-// ==========================================
-
-async function checkGiveaways() {
-
-    const giveaways =
-        loadGiveaways();
-
-    let changed = false;
-
-    for (
-        const [id, giveaway]
-        of Object.entries(giveaways)
-    ) {
-
-        if (giveaway.ended) {
-            continue;
-        }
-
-        if (!giveaway.endTime) {
-            continue;
-        }
-
-        if (
-            Date.now() <
-            Number(giveaway.endTime)
-        ) {
-            continue;
-        }
-
-        try {
-
-            giveaway.ended = true;
-
-            const participants =
-                Array.isArray(
-                    giveaway.participants
-                )
-                    ? giveaway.participants
-                    : [];
-
-            const winners =
-                pickWinners(
-                    participants,
-                    giveaway.winners || 1
-                );
-
-            giveaway.winnerIds =
-                winners;
-
-            changed = true;
-
-            const channel =
-                await client.channels.fetch(
-                    giveaway.channelId
-                );
-
-            if (!channel) {
-                continue;
-            }
-
-            const winnerText =
-                winners.length
-                    ? winners
-                        .map(
-                            userId =>
-                                `<@${userId}>`
-                        )
-                        .join(", ")
-                    : "Nobody";
-
-            // Edit original giveaway message
-
-            if (giveaway.messageId) {
-
-                try {
-
-                    const giveawayMessage =
-                        await channel.messages.fetch(
-                            giveaway.messageId
-                        );
-
-                    await giveawayMessage.edit({
-                        content:
-                            `🎉 **GIVEAWAY ENDED!**\n\n` +
-                            `🎁 **Prize:** ${giveaway.prize}\n` +
-                            `🏆 **Winner${winners.length === 1 ? "" : "s"}:** ${winnerText}`,
-
-                        components: []
-                    });
-
-                } catch (error) {
-
-                    console.error(
-                        "⚠️ Could not edit giveaway message:",
-                        error.message
-                    );
-                }
-            }
-
-            // Announce winners
-
-            if (winners.length > 0) {
-
-                await channel.send({
-                    content:
-                        `🎉 Congratulations ${winnerText}! ` +
-                        `You won **${giveaway.prize}**!`,
-
-                    allowedMentions: {
-                        users: winners
-                    }
-                });
-
-            } else {
-
-                await channel.send(
-                    `❌ The giveaway for **${giveaway.prize}** ended with no participants.`
-                );
-            }
-
-            console.log(
-                `🎉 Giveaway ended: ${id}`
-            );
-
-        } catch (error) {
-
-            console.error(
-                `❌ Giveaway ${id} error:`,
-                error
-            );
-        }
-    }
-
-    if (changed) {
-        saveGiveaways(giveaways);
-    }
-}
-
-
-// ==========================================
-// GIVEAWAY CHECKER
-// ==========================================
-
-setInterval(
-    checkGiveaways,
-    5000
-);
 
 
 // ==========================================
@@ -449,32 +242,31 @@ client.once(
     "ready",
     async () => {
 
-        console.log("");
         console.log(
             "======================================"
         );
 
         console.log(
-            `🟢 NSC BOT ONLINE`
+            `NSC BOT ONLINE`
         );
 
         console.log(
-            `🤖 ${client.user.tag}`
+            `${client.user.tag}`
         );
 
         console.log(
-            `📊 Servers: ${client.guilds.cache.size}`
+            `Servers: ${client.guilds.cache.size}`
         );
 
         console.log(
-            `⚡ Commands: ${client.commands.size}`
+            `Commands: ${client.commands.size}`
         );
 
         console.log(
             "======================================"
         );
 
-        await checkGiveaways();
+        await registerCommands();
     }
 );
 
@@ -486,7 +278,7 @@ client.once(
 if (!process.env.TOKEN) {
 
     console.error(
-        "❌ TOKEN is missing from .env!"
+        "TOKEN is missing from environment variables!"
     );
 
     process.exit(1);
@@ -494,17 +286,12 @@ if (!process.env.TOKEN) {
 
 client.login(
     process.env.TOKEN
-).then(() => {
-
-    console.log(
-        "🔐 Login request sent..."
-    );
-
-}).catch(error => {
+).catch(error => {
 
     console.error(
-        "❌ Discord login failed:",
-        error
+        "Discord login failed:"
     );
+
+    console.error(error);
 
 });
