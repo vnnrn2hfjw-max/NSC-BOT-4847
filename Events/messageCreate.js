@@ -35,11 +35,11 @@ module.exports = {
 
             const text = `# NSC PRICES
 
-#  :emoji_12: __NSC | OFFICIAL MARKET__ :emoji_12: 
+<:emoji_12:1505267333952700636> NSC | OFFICIAL MARKET <:emoji_12:1505267333952700636>
 
+@everyone
 
-
-:Diamond_Red: ╔══════〔 ACCESS 〕══════╗:Diamond_Red: 
+<:Diamond_Red:1502724800362053782> ╔══════〔 ACCESS 〕══════╗ <:Diamond_Red:1502724800362053782>
 
 * Free Access — FREE
 * Half Access — 350 Robux | $3.50
@@ -48,7 +48,7 @@ module.exports = {
 
 ╚══════════════════╝
 
-:Red_StaffBadge: ╔══════〔 STAFF 〕══════╗:Red_StaffBadge: 
+<:Red_StaffBadge:1535721934325547019> ╔══════〔 STAFF 〕══════╗ <:Red_StaffBadge:1535721934325547019>
 
 * Trial Moderator — $10
 * Junior Moderator — $20
@@ -57,37 +57,37 @@ module.exports = {
 
 ╚══════════════════╝
 
-:MoneyBag: ╔══〔 ADMINISTRATION 〕══╗:MoneyBag: 
+<:MoneyBag:1535722855734452274> ╔══〔 ADMINISTRATION 〕══╗ <:MoneyBag:1535722855734452274>
 
 * Admin in Training — $60
-* Administrator — $90
-* Senior Administrator — $125
-* Head Admin — $160
-* Head of Staff — $200
-* Chief of Staff — $250
+* Administrator — $75
+* Senior Administrator — $85
+* Head Admin — $100
+* Head of Staff — $115
+* Chief of Staff — $130
 
 ╚══════════════════╝
 
-:emoji_23: ╔══〔 SUPERVISION 〕══╗:emoji_23: 
+<:emoji_23:1505268256842186762> ╔══〔 SUPERVISION 〕══╗ <:emoji_23:1505268256842186762>
 
-* Assistant Supervisor — $275
-* Staff Supervisor — $300
-* Head Supervisor — $325
-
-╚══════════════════╝
-
-:emoji_17: ╔════〔 HR 〕════╗:emoji_17: 
-
-* Management — $350
-* Head of Management — $375
-* Executive Director — $400
-* 3rd in Command — $425
-* 2nd in Command — $450
-* 1st in Command — $475
+* Assistant Supervisor — $140
+* Staff Supervisor — $155
+* Head Supervisor — $170
 
 ╚══════════════════╝
 
-:emoji_16: ╔══〔 ADD-ONS 〕══╗:emoji_16: 
+<:emoji_17:1505268150550270044> ╔════〔 HR 〕════╗ <:emoji_17:1505268150550270044>
+
+* Management — $185
+* Head of Management — $200
+* Executive Director — $215
+* 3rd in Command — $230
+* 2nd in Command — $245
+* 1st in Command — $260
+
+╚══════════════════╝
+
+<:emoji_16:1505268137665364129> ╔══〔 ADD-ONS 〕══╗ <:emoji_16:1505268137665364129>
 
 * Pic Perms — $3
 * Custom Role — $10
@@ -96,7 +96,7 @@ module.exports = {
 
 ╚══════════════════╝
 
-:MoneyBag: ╔══〔 PAYMENTS 〕══╗:MoneyBag: 
+<:MoneyBag:1535722855734452274> ╔══〔 PAYMENTS 〕══╗ <:MoneyBag:1535722855734452274>
 
 * PayPal
 * Robux
@@ -105,12 +105,16 @@ module.exports = {
 
 ╚══════════════════╝
 
-:crown002: ╔══〔 TERMS 〕══╗:crown002: 
+<:crown002:1531653744910143488> ╔══〔 TERMS 〕══╗ <:crown002:1531653744910143488>
 
 * No refunds.
 * Buy only from authorized sellers.
 * Trial required for staff ranks.
-* Purchases do not guarantee permission
+* Purchases do not guarantee permissions.
+* Abuse of purchased roles may result in removal without refund.
+* All purchases are final.
+
+╚══════════════════╝
 .`;
 
             return message.channel.send({
