@@ -35,51 +35,83 @@ module.exports = {
 
             const text = `# NSC PRICES
 
-## ACCESS
+#  :emoji_12: __NSC | OFFICIAL MARKET__ :emoji_12: 
 
-> - **Free Access** — FREE
-> - **Half Access** — 350 Robux | $3.50
-> - **Full Access** — 600 Robux | $8
-> - **Name Skip** — 150 Robux | $1.50
 
-## STAFF RANKS
 
-> - **Chief of Staff** — $250
-> - **Manager** — $200
-> - **Head Admin** — $160
-> - **Senior Admin** — $125
-> - **Admin** — $90
-> - **Ranker** — $60
-> - **Head Moderator** — $50
-> - **Senior Moderator** — $40
-> - **Moderator** — $30
-> - **Junior Moderator** — $20
-> - **Trial Moderator** — $10
+:Diamond_Red: ╔══════〔 ACCESS 〕══════╗:Diamond_Red: 
 
-## EXTRA
+* Free Access — FREE
+* Half Access — 350 Robux | $3.50
+* Full Access — 600 Robux | $8
+* Name Skip — 150 Robux | $1.50
 
-> - **Link Perms** — $3
-> - **Pic Perms** — $3
-> - **Custom Role** — $10
-> - **Private VC** — $15
-> - **Custom Role + Private VC Bundle** — $20
+╚══════════════════╝
 
-## PAYMENTS
+:Red_StaffBadge: ╔══════〔 STAFF 〕══════╗:Red_StaffBadge: 
 
-> - PayPal (Friends & Family ONLY)
-> - Robux
-> - Server Boosts
-> - Gift Cards
+* Trial Moderator — $10
+* Junior Moderator — $20
+* Moderator — $30
+* Head Moderator — $50
 
-## TERMS AND CONDITIONS
+╚══════════════════╝
 
-> **Only buy from a Trusted Seller, Owner, or Founder.**
-> **Do NOT send payment until your purchase has been confirmed.**
-> No refunds.
-> Trial is still required for staff ranks.
-> Abuse of purchased roles may result in removal without a refund.
-> Leadership roles are **not for sale.**
-> All purchases are final.`;
+:MoneyBag: ╔══〔 ADMINISTRATION 〕══╗:MoneyBag: 
+
+* Admin in Training — $60
+* Administrator — $90
+* Senior Administrator — $125
+* Head Admin — $160
+* Head of Staff — $200
+* Chief of Staff — $250
+
+╚══════════════════╝
+
+:emoji_23: ╔══〔 SUPERVISION 〕══╗:emoji_23: 
+
+* Assistant Supervisor — $275
+* Staff Supervisor — $300
+* Head Supervisor — $325
+
+╚══════════════════╝
+
+:emoji_17: ╔════〔 HR 〕════╗:emoji_17: 
+
+* Management — $350
+* Head of Management — $375
+* Executive Director — $400
+* 3rd in Command — $425
+* 2nd in Command — $450
+* 1st in Command — $475
+
+╚══════════════════╝
+
+:emoji_16: ╔══〔 ADD-ONS 〕══╗:emoji_16: 
+
+* Pic Perms — $3
+* Custom Role — $10
+* Private VC — $15
+* Role + Private VC — $20
+
+╚══════════════════╝
+
+:MoneyBag: ╔══〔 PAYMENTS 〕══╗:MoneyBag: 
+
+* PayPal
+* Robux
+* Server Boosts
+* Gift Cards
+
+╚══════════════════╝
+
+:crown002: ╔══〔 TERMS 〕══╗:crown002: 
+
+* No refunds.
+* Buy only from authorized sellers.
+* Trial required for staff ranks.
+* Purchases do not guarantee permission
+.`;
 
             return message.channel.send({
                 content: text,
